@@ -24,14 +24,22 @@ void freeSpotUpdate(){                                       //hladanie najblizs
     int *freeSpot = char2int(tmp);
     printf("freeSpot: %d\n", *freeSpot);
 
-    tmp += *freeSpot;
+    //tmp += *freeSpot;
+    tmp += stuff/3;
 
     while(*(char2int(tmp)) < 0){
         printf("tmpNow: %d\n", *(char2int(tmp)));
         tmp += (*(char2int(tmp)) * (-1)) + stuff;
     }
     printf("tmp-freeSpot: %d\n", tmp - int2char(freeSpot));
-    *freeSpot = tmp - int2char(freeSpot);
+
+    int newSize = (int)(tmp - int2char(freeSpot));
+
+    if(*freeSpot > newSize){
+        *char2int(tmp + stuff/3) = *freeSpot;
+    }
+
+    *freeSpot = newSize;
     printf("freeSpotNow: %d\n", *freeSpot);
 
 
@@ -51,11 +59,21 @@ void *memory_alloc(unsigned int size){
         return NULL;
     }
 
+    if(*char2int(tmp) < size){
+        tmp += *char2int(tmp + stuff/3);
+    }
+
+    if(currentSize < stuff + size){
+        printf("CURRENT SIZE JE MENSIA AKO STUFF\n");
+        size = currentSize;
+    }
+
     char *result = tmp;
     *char2int(tmp) = (int)(size * (-1));                    //ulozenie novej velkosti v zapornom tvare (alokovana)
 //    printf("tmp now: %d\n", *(char2int(tmp)));
     tmp += stuff/3;
-    *(char2int(tmp)) = size + stuff/3 * 2;
+    //*(char2int(tmp)) = (int)size + stuff/3 * 2;
+    //*(char2int(tmp)) = 0;
     tmp += stuff/3;                                         //posun o hlavicku
     for(int i = 0; i < size; i++){                          //zapis size-krat -2 (miesto pouzitelne pre pouzivatela)
         *(tmp + i) = -2;
@@ -77,6 +95,29 @@ void *memory_alloc(unsigned int size){
 
 //    printf("tmp now: %d\n", *tmp);
     return result;
+}
+
+int memory_free(void *valid_ptr){
+    printf("--------FREE--------\n");
+
+    int stuff = 3 * sizeof(int);
+    char *tmp = valid_ptr;
+    int size = *(char2int(tmp)) * (-1);
+    printf("%d\n", size);
+    printf("%d\n", *(char2int(tmp - stuff/3)));
+    printf("%d\n", *(char2int(tmp + size + stuff)));
+    if(*(char2int(tmp - stuff/3)) < 0 && *(char2int(tmp + size + stuff)) < 0){
+        printf("Case 0\n");
+        *(char2int(tmp)) *= (-1);
+        tmp += stuff/3 * 2;
+        for(int i = 0; i < size; i++){
+            *(tmp + i) = 0;
+        }
+        tmp += size;
+        *(char2int(tmp)) *= (-1);
+    }
+
+    freeSpotUpdate();
 }
 
 //void *memory_alloc(unsigned int size){
@@ -172,8 +213,12 @@ int main(void){
 //    printf("reg[96]: %d\n", *char2int(region + 96));
 
     char *pointer = memory_alloc(12);
-    char *pointer1 = memory_alloc(23);
-    char *pointer2 = memory_alloc(23);
+    char *pointer1 = memory_alloc(13);
+    char *pointer2 = memory_alloc(10);
+
+    memory_free(pointer1);
+
+    char *pointer3 = memory_alloc(3);
 
 //    char *pointer = memory_alloc(10);
 //    char *pointer1 = memory_alloc(12);
