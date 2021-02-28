@@ -242,12 +242,75 @@ int memory_free(void *valid_ptr){
     } else if(*char2int(tmp - stuff/2) > 0 && *char2int(tmp + fullSize) < 0){       //pred je volne
         printf("Case 2\n");
 
+        char *lastFreeOffset = tmp - (*char2int(tmp - stuff / 2) + stuff);
+        char *nextFreeOffset = lastFreeOffset + *char2short(lastFreeOffset + stuff / 2);
+        char *toBind = lastFreeOffset;
+        lastFreeOffset -= *char2short(lastFreeOffset + stuff / 2 + freeStuff / 2);
+
+        int newSize = *char2int(toBind) + stuff + *char2int(tmp);
+        tmp = toBind;
+        *char2int(tmp) = newSize;
+        for(int i = 0; i < newSize; i++){
+            *(tmp + stuff / 2 + i) = 0;
+        }
+        *char2int(tmp + stuff / 2 + newSize) = newSize;
+
+        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);
+        *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
+        *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
+        *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
 
 
     } else if(*char2int(tmp - stuff/2) < 0 && *char2int(tmp + fullSize) > 0){       //za je volne
         printf("Case 3\n");
+        char *nextFreeOffset = tmp + *char2int(tmp) + stuff;
+        char *lastFreeOffset = nextFreeOffset - *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2);
+        char *toBind = nextFreeOffset;
+        int isLast = *char2short(nextFreeOffset + stuff / 2);
+        nextFreeOffset += *char2short(nextFreeOffset + stuff / 2);
+
+        int newSize = *char2int(tmp) + stuff + *char2int(toBind);
+        *char2int(tmp) = newSize;
+        for(int i = 0; i < newSize; i++){
+            *(tmp + stuff / 2 + i) = 0;
+        }
+        *char2int(tmp + stuff / 2 + newSize) = newSize;
+
+        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);
+        if(isLast != 0){
+            *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
+            *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
+        }
+        *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
+
+
     } else if(*char2int(tmp - stuff/2) > 0 && *char2int(tmp + fullSize) > 0){       //pred aj za je volne
         printf("Case 4\n");
+
+        char *nextFreeOffset = tmp + *char2int(tmp) + stuff;
+        char *toBindAfter = nextFreeOffset;
+        int isLast = *char2short(nextFreeOffset + stuff / 2);
+        char *lastFreeOffset = tmp - *char2int(tmp - stuff / 2) - stuff;
+        char *toBindBefore = lastFreeOffset;
+        printf("%d\n", *char2int(lastFreeOffset));
+        printf("%d\n", *char2int(nextFreeOffset));
+        lastFreeOffset -= *char2short(lastFreeOffset + stuff / 2 + freeStuff / 2);
+        nextFreeOffset += *char2short(nextFreeOffset + stuff / 2);
+        tmp = toBindBefore;
+
+        int newSize = *char2int(toBindBefore) + stuff / 2 + *char2int(tmp) + stuff + *char2int(toBindAfter);
+        *char2int(tmp) = newSize;
+        for(int i = 0; i < newSize; i++){
+            *(tmp + stuff / 2 + i) = 0;
+        }
+        *char2int(tmp + stuff / 2 + newSize) = newSize;
+
+        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);
+        if(isLast != 0){
+            *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
+            *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
+        }
+        *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
     }
 }
 
@@ -367,9 +430,13 @@ int main(void){
     char *pointer = memory_alloc(12);
     char *pointer1 = memory_alloc(10);
     char *pointer2 = memory_alloc(12);
+    char *pointer3 = memory_alloc(10);
 
-    memory_free(pointer1);
     memory_free(pointer);
+    memory_free(pointer2);
+    memory_free(pointer1);
+    memory_free(pointer3);
+
 
     return 0;
 }
