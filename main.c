@@ -200,6 +200,7 @@ int memory_free(void *valid_ptr){
 
         char *lastFreeOffset = (int2char(header) + stuff / 2);
         char *nextFreeOffset = (int2char(header) + *lastFreeOffset);
+        int isLast = *char2short(nextFreeOffset + stuff / 2);
         nextFreeOffset += *char2short(nextFreeOffset + stuff / 2);
         *char2short(tmp + stuff / 2) = (unsigned short) (*lastFreeOffset - 8);
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - int2char(header));
@@ -215,9 +216,13 @@ int memory_free(void *valid_ptr){
         *char2int(tmp) = newSize;
         tmp -= (newSize + stuff / 2);
         printf("%d\n", *char2int(tmp));
+        if(isLast != 0){
+            *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
+            *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
+        } else{
+            *char2short(tmp + stuff / 2) = (unsigned short) 0;
+        }
 
-        *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
-        *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
 
     } else if(*char2int(tmp - stuff/2) < 0 && *char2int(tmp + fullSize) < 0){       //pred za nie je volne
         printf("Case 1\n");
@@ -280,6 +285,8 @@ int memory_free(void *valid_ptr){
         if(isLast != 0){
             *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
             *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
+        } else{
+            *char2short(tmp + stuff / 2) = (unsigned short) 0;
         }
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
 
@@ -296,9 +303,12 @@ int memory_free(void *valid_ptr){
         printf("%d\n", *char2int(nextFreeOffset));
         lastFreeOffset -= *char2short(lastFreeOffset + stuff / 2 + freeStuff / 2);
         nextFreeOffset += *char2short(nextFreeOffset + stuff / 2);
-        tmp = toBindBefore;
+        printf("%d\n", *char2int(lastFreeOffset));
+        printf("%d\n", *char2int(nextFreeOffset));
 
-        int newSize = *char2int(toBindBefore) + stuff / 2 + *char2int(tmp) + stuff + *char2int(toBindAfter);
+
+        int newSize = *char2int(toBindBefore) + stuff + *char2int(tmp) + stuff + *char2int(toBindAfter);
+        tmp = toBindBefore;
         *char2int(tmp) = newSize;
         for(int i = 0; i < newSize; i++){
             *(tmp + stuff / 2 + i) = 0;
@@ -309,6 +319,8 @@ int memory_free(void *valid_ptr){
         if(isLast != 0){
             *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
             *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
+        } else{
+            *char2short(tmp + stuff / 2) = (unsigned short) 0;
         }
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
     }
@@ -432,9 +444,9 @@ int main(void){
     char *pointer2 = memory_alloc(12);
     char *pointer3 = memory_alloc(10);
 
+    memory_free(pointer1);
     memory_free(pointer);
     memory_free(pointer2);
-    memory_free(pointer1);
     memory_free(pointer3);
 
 
