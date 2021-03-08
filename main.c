@@ -678,23 +678,34 @@ void z1_testovac(char *region, char **pointer, int minBlock, int maxBlock, int m
 //    return 0;
 //}
 
-int main(void){     //ratanie chyby od idealneho riesenia - NOT DONE YET
-    char region[50050];
-    memory_init(region, 50000);
-    char *pointers[50000];
+int main(void){     //ratanie chyby od idealneho riesenia
+    char region[5050];
+    memory_init(region, 5000);
+    char *pointers[5000];
+    int allocated = 0;
+    int allocated_count = 0;
+    int memSize = 5000;
     int size;
     int i = 0;
+    int freeSize;
     do {
         i++;
-        size = rand() % 49092 + 8;
-        pointers[i] = memory_alloc(size);
-        if(i > 1 && memory_check(pointers[i-1])){
-            memory_free(pointers[i-1]);
+        size = rand() % 200 + 8;
+        freeSize = *char2int(int2char(header) + *char2int(int2char(header) + 4));
+        if(freeSize < size){
+            size = 8;
         }
-    } while(pointers[i] != NULL && i < 5);
-    if(memory_check(pointers[i])){
+        allocated += size;
+        allocated_count++;
+        pointers[i] = memory_alloc(size);
+    } while(pointers[i] != NULL);
+    i = 1;
+    while(pointers[i] != NULL) {
         memory_free(pointers[i]);
+        i++;
     }
+    printf("velkost uspesne alokovanej pamate je %d v %d blokoch na pamat velkosti %d\n", allocated, allocated_count, memSize);
+    printf("To je %.2lf%%\n", (double) allocated / (double) memSize * 100);
     if(*char2int(region + 8) == *char2int(region) - 16){
         printf("Successful Test\n");
     }
