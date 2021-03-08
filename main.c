@@ -20,9 +20,6 @@ char *int2char (int *ptr){                                  //pretypovanie int n
 unsigned short *char2short(char *ptr){
     return ((unsigned short*)ptr);
 }
-char *short2char(unsigned short *ptr){
-    return ((char*)ptr);
-}
 
 //void *memory_alloc(unsigned int size){
 //    //stuff definition
@@ -214,7 +211,7 @@ int memory_free(void *valid_ptr){
     *char2int(tmp) *= (-1);
     tmp -= (fullSize - stuff/2);
 //Pospaja volne bloky a aktualizuje ukazovatele
-    if(*char2int(int2char(header) + 4) == *header){
+    if(*char2int(int2char(header) + 4) == *header){     //je plne
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - int2char(header));
         *char2short(int2char(header) + 4) = (unsigned short) (tmp - int2char(header));
     }
@@ -222,8 +219,8 @@ int memory_free(void *valid_ptr){
         //printf("Case 0\n");
 
         char *lastFreeOffset = (int2char(header) + stuff / 2);
-        char *nextFreeOffset = (int2char(header) + *lastFreeOffset);
-        *char2short(tmp + stuff / 2) = (unsigned short) (*lastFreeOffset - 8);
+        char *nextFreeOffset = (int2char(header) + *char2short(lastFreeOffset));
+        *char2short(tmp + stuff / 2) = (unsigned short) (*char2short(lastFreeOffset) - 8);
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - int2char(header));
         *char2short(lastFreeOffset) = (unsigned short) (tmp - int2char(header));
         *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
@@ -299,7 +296,7 @@ int memory_free(void *valid_ptr){
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
 
 
-    } else if(*char2int(tmp - stuff/2) < 0 && *char2int(tmp + fullSize) > 0){       //za je volne
+    } else if(*char2int(tmp - stuff/2) < 0 && *char2int(tmp + fullSize) >= 0){       //za je volne
         //printf("Case 3\n");
         char *nextFreeOffset = tmp + *char2int(tmp) + stuff;
         char *lastFreeOffset = nextFreeOffset - *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2);
@@ -324,7 +321,7 @@ int memory_free(void *valid_ptr){
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
 
 
-    } else if(*char2int(tmp - stuff/2) > 0 && *char2int(tmp + fullSize) > 0){       //pred aj za je volne
+    } else if(*char2int(tmp - stuff/2) > 0 && *char2int(tmp + fullSize) >= 0){       //pred aj za je volne
         //printf("Case 4\n");
         char *lastFreeOffset = tmp - *char2int(tmp - stuff / 2) - stuff;
         int isEnd = *char2short(lastFreeOffset + stuff / 2);
@@ -370,6 +367,9 @@ int memory_free(void *valid_ptr){
 
 int memory_check(void *ptr){
     char *tmp = (char*) ptr;
+    if(tmp == NULL){
+        return 0;
+    }
     if(*char2int(tmp) < 0 && *(tmp + 4) == -2){
         return 1;
     }else{
@@ -380,7 +380,7 @@ int memory_check(void *ptr){
 void memory_init(void *ptr, unsigned int size){
     header = (int*)ptr;
     int staff = 2 * sizeof(int);
-    for (int i = 0; i < size; i++){
+    for (int i = 0; i < (size + 16); i++){
         *(int2char(header) + i) = 0;
     }
     *header = (int)size;
@@ -446,54 +446,322 @@ void z1_testovac(char *region, char **pointer, int minBlock, int maxBlock, int m
             printf("Error: Modified memory outside the managed region. index: %d\n",j-500);
         }
     }
-    float result = ((float)mallocated_count / allocated_count) * 100;
-    float result_bytes = ((float)mallocated / allocated) * 100;
+    float result = ((float)mallocated_count / (float)allocated_count) * 100;
+    float result_bytes = ((float)mallocated / (float)allocated) * 100;
     printf("Memory size of %d bytes: allocated %.2f%% blocks (%.2f%% bytes).\n", random_memory, result, result_bytes);
 }
 
 
-int main() {
-    char region[100000];
-    char* pointer[13000];
-    z1_testovac(region, pointer, 8, 24, 50, 100, 1);
-    z1_testovac(region, pointer, 8, 1000, 10000, 20000, 0);
-    z1_testovac(region, pointer, 8, 35000, 50000, 60000, 0);
-
-    return 0;
-}
-
-
-//int main(void){
+//int main() {
+//    char region[100000];
+//    char* pointer[13000];
+//    z1_testovac(region, pointer, 8, 24, 50, 100, 1);
+//    z1_testovac(region, pointer, 8, 1000, 10000, 20000, 0);
+//    z1_testovac(region, pointer, 8, 35000, 50000, 60000, 0);
 //
+//    return 0;
+//}
+
+// ----------TESTY---------
+
+//int main(void){   //rovnake bloky do pola 50
+//    char region[150];
+//    memory_init(region, 50);
+//    char *pointers[50];
+//    int i = 0;
+//    do {
+//        i++;
+//        pointers[i] = memory_alloc(8);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        i++;
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
 //
-//    char region[100];
+//    return 0;
+//}
+
+//int main(void){   //rovkane bloky do pola 50
+//    char region[150];
+//    memory_init(region, 50);
+//    char *pointers[50];
+//    int i = 0;
+//    do {
+//        i++;
+//        pointers[i] = memory_alloc(16);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        i++;
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
+//
+//    return 0;
+//}
+
+//int main(void){   //rovnake bloky do pola 100
+//    char region[150];
 //    memory_init(region, 100);
-//
-//
-//    char *pointer = memory_alloc(20);
-//    char *pointer1 = memory_alloc(12);
-//    memory_free(pointer);
-//    char *pointer2 = memory_alloc(10);
-//
-//    char *pointer3 = memory_alloc(4);
-//    char *pointer4 = memory_alloc(10);
-//    char *pointer5 = memory_alloc(4);
-//
-//
-//    if(memory_check(pointer2)){
-//        printf("pointer 2\n");
+//    char *pointers[100];
+//    int i = 0;
+//    do {
+//        i++;
+//        pointers[i] = memory_alloc(8);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        i++;
 //    }
-//    if(memory_check(pointer)){
-//        printf("pointer\n");
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
 //    }
-//    printf("%d\n", *char2int(pointer2));
-//    memory_free(pointer4);
-//    memory_free(pointer1);
 //
-//    memory_free(pointer2);
-//    memory_free(pointer3);
-//    memory_free(pointer5);
+//    return 0;
+//}
+
+//int main(void){   //rovnake bloky do pola 100
+//    char region[150];
+//    memory_init(region, 100);
+//    char *pointers[100];
+//    int i = 0;
+//    do {
+//        i++;
+//        pointers[i] = memory_alloc(24);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        i++;
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
 //
+//    return 0;
+//}
+
+//int main(void){   //rovnake bloky do pola 200
+//    char region[250];
+//    memory_init(region, 200);
+//    char *pointers[200];
+//    int i = 0;
+//    do {
+//        i++;
+//        pointers[i] = memory_alloc(8);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        pointers[i] = NULL;
+//        i++;
+//    }
+//    i = 0;
+//    do {
+//        i++;
+//        pointers[i] = memory_alloc(16);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        pointers[i] = NULL;
+//        i++;
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
+//
+//    return 0;
+//}
+
+//int main(void){     //nahodne bloky do pola 50
+//    char region[150];
+//    memory_init(region, 50);
+//    char *pointers[50];
+//    int size;
+//    int i = 0;
+//    do {
+//        i++;
+//        size = rand() % 16 + 8;
+//        pointers[i] = memory_alloc(size);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        i++;
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
+//
+//    return 0;
+//}
+
+//int main(void){     //nahodne bloky do pola 100
+//    char region[150];
+//    memory_init(region, 100);
+//    char *pointers[100];
+//    int size;
+//    int i = 0;
+//    do {
+//        i++;
+//        size = rand() % 16 + 8;
+//        pointers[i] = memory_alloc(size);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        i++;
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
+//
+//    return 0;
+//}
+
+//int main(void){     //nahodne bloky do pola 100
+//    char region[250];
+//    memory_init(region, 200);
+//    char *pointers[200];
+//    int size;
+//    int i = 0;
+//    do {
+//        i++;
+//        size = rand() % 16 + 8;
+//        pointers[i] = memory_alloc(size);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        i++;
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
+//
+//    return 0;
+//}
+
+//int main(void){     //nahodne velke bloky do pola 5000
+//    char region[5050];
+//    memory_init(region, 5000);
+//    char *pointers[5000];
+//    int size;
+//    int i = 0;
+//    do {
+//        i++;
+//        size = rand() % 4050 + 50;
+//        pointers[i] = memory_alloc(size);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        i++;
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
+//
+//    return 0;
+//}
+
+//int main(void){     //nahodne male a velke bloky do pola 50000
+//    char region[50050];
+//    memory_init(region, 50000);
+//    char *pointers[50000];
+//    int size;
+//    int i = 0;
+//    do {
+//        i++;
+//        size = rand() % 4092 + 8;
+//        pointers[i] = memory_alloc(size);
+//    } while(pointers[i] != NULL);
+//    i = 1;
+//    while(pointers[i] != NULL) {
+//        memory_free(pointers[i]);
+//        i++;
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
+//
+//    return 0;
+//}
+
+//int main(void){     //nahodne bloky do pola 200, striedave alokovanie a uvolnovanie
+//    char region[250];
+//    memory_init(region, 200);
+//    char *pointers[200];
+//    int size;
+//    int i = 0;
+//    do {
+//        i++;
+//        size = rand() % 16 + 8;
+//        pointers[i] = memory_alloc(size);
+//        if(i > 1 && memory_check(pointers[i-1])){
+//            memory_free(pointers[i-1]);
+//        }
+//    } while(pointers[i] != NULL && i < 15);
+//    memory_free(pointers[i]);
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
+//
+//    return 0;
+//}
+
+//int main(void){     //nahodne bloky do pola 5000, striedave alokovanie a uvolnovanie
+//    char region[5050];
+//    memory_init(region, 5000);
+//    char *pointers[5000];
+//    int size;
+//    int i = 0;
+//    do {
+//        i++;
+//        size = rand() % 4092 + 8;
+//        pointers[i] = memory_alloc(size);
+//        if(i > 1 && memory_check(pointers[i-1])){
+//            memory_free(pointers[i-1]);
+//        }
+//    } while(pointers[i] != NULL && i < 5);
+//    if(memory_check(pointers[i])){
+//        memory_free(pointers[i]);
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
+//
+//    return 0;
+//}
+
+//int main(void){     //nahodne bloky do pola 50000, striedave alokovanie a uvolnovanie
+//    char region[50050];
+//    memory_init(region, 50000);
+//    char *pointers[50000];
+//    int size;
+//    int i = 0;
+//    do {
+//        i++;
+//        size = rand() % 49092 + 8;
+//        pointers[i] = memory_alloc(size);
+//        if(i > 1 && memory_check(pointers[i-1])){
+//            memory_free(pointers[i-1]);
+//        }
+//    } while(pointers[i] != NULL && i < 5);
+//    if(memory_check(pointers[i])){
+//        memory_free(pointers[i]);
+//    }
+//    if(*char2int(region + 8) == *char2int(region) - 16){
+//        printf("Successful Test\n");
+//    }
 //
 //    return 0;
 //}
