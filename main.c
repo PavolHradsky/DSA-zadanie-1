@@ -178,17 +178,14 @@ int memory_free(void *valid_ptr){
 
 
     } else if(*char2int(tmp - stuff/2) < 0 && *char2int(tmp + fullSize) < 0){       //pred za nie je volne
-        //printf("Case 1\n");
         char *firstFree = tmp;
         firstFree += *char2int(firstFree) + stuff;
-        while(*char2int(firstFree) < 0 && (firstFree + stuff) < (int2char(header) + *header)){
+        while(*char2int(firstFree) < 0 && (firstFree + stuff) < (int2char(header) + *header)){  //najde sa najblizsi volny blok
             firstFree += (*char2int(firstFree) * (-1) + stuff);
         }
-        char *lastFreeOffset = (firstFree - *(firstFree + stuff / 2 + freeStuff / 2));
+        char *lastFreeOffset = (firstFree - *(firstFree + stuff / 2 + freeStuff / 2));  //nastavi sa last a firstFreeOffset
         char *nextFreeOffset = firstFree;
-        //printf("%d\n", *char2short(lastFreeOffset));
-        //printf("%d\n", *char2short(nextFreeOffset));
-        *char2short(lastFreeOffset + stuff/2) = (unsigned short) (tmp - lastFreeOffset);
+        *char2short(lastFreeOffset + stuff/2) = (unsigned short) (tmp - lastFreeOffset);    //aktualizuju sa offsety
 
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
 
@@ -198,14 +195,13 @@ int memory_free(void *valid_ptr){
 
 
     } else if(*char2int(tmp - stuff/2) > 0 && *char2int(tmp + fullSize) < 0){       //pred je volne
-        //printf("Case 2\n");
-
-        char *lastFreeOffset = tmp - (*char2int(tmp - stuff / 2) + stuff);
+        char *lastFreeOffset = tmp - (*char2int(tmp - stuff / 2) + stuff);  //nasatvi sa lastfreeoffset na blok pred tmp, nextfreeoffset ako ukazovatel na najblizsi volny blok z lastfree
+                                                                                    //a lastfree sa posunie na dalsi vollny blok pred nim
         char *nextFreeOffset = lastFreeOffset + *char2short(lastFreeOffset + stuff / 2);
-        char *toBind = lastFreeOffset;
+        char *toBind = lastFreeOffset;      //toBind je blok ktory budem spajat s uvolnenym blokom
         lastFreeOffset -= *char2short(lastFreeOffset + stuff / 2 + freeStuff / 2);
 
-        int newSize = *char2int(toBind) + stuff + *char2int(tmp);
+        int newSize = *char2int(toBind) + stuff + *char2int(tmp);   //uvolneny blok sa spoji s predchadzajucim blokom
         tmp = toBind;
         *char2int(tmp) = newSize;
         for(int i = 0; i < newSize; i++){
@@ -213,28 +209,27 @@ int memory_free(void *valid_ptr){
         }
         *char2int(tmp + stuff / 2 + newSize) = newSize;
 
-        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);
+        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);  //aktualizuju sa offsety
         *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
         *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
 
 
     } else if(*char2int(tmp - stuff/2) < 0 && *char2int(tmp + fullSize) >= 0){       //za je volne
-        //printf("Case 3\n");
-        char *nextFreeOffset = tmp + *char2int(tmp) + stuff;
-        char *lastFreeOffset = nextFreeOffset - *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2);
-        char *toBind = nextFreeOffset;
+        char *nextFreeOffset = tmp + *char2int(tmp) + stuff;    //nastavi sa nextFreeOffset na blok za tmp
+        char *lastFreeOffset = nextFreeOffset - *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2);    //lastFreeOffset ako minuly folny blok
+        char *toBind = nextFreeOffset;  //blok na spojenie
         int isLast = *char2short(nextFreeOffset + stuff / 2);
-        nextFreeOffset += *char2short(nextFreeOffset + stuff / 2);
+        nextFreeOffset += *char2short(nextFreeOffset + stuff / 2);  //nextFreeOffset sa posunie na dalsi volny blok
 
-        int newSize = *char2int(tmp) + stuff + *char2int(toBind);
+        int newSize = *char2int(tmp) + stuff + *char2int(toBind);   //volny blok sa spoji s uvolnenym blokom
         *char2int(tmp) = newSize;
         for(int i = 0; i < newSize; i++){
             *(tmp + stuff / 2 + i) = 0;
         }
         *char2int(tmp + stuff / 2 + newSize) = newSize;
 
-        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);
+        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);  //aktualizuju sa offsety na volne bloky
         if(isLast != 0){
             *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
             *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
@@ -245,22 +240,16 @@ int memory_free(void *valid_ptr){
 
 
     } else if(*char2int(tmp - stuff/2) > 0 && *char2int(tmp + fullSize) >= 0){       //pred aj za je volne
-        //printf("Case 4\n");
-        char *lastFreeOffset = tmp - *char2int(tmp - stuff / 2) - stuff;
+        char *lastFreeOffset = tmp - *char2int(tmp - stuff / 2) - stuff;    //najde sa lastFreeOffset a nextFreeOffset, a posunu sa este o jeden volny blok do stran
         int isEnd = *char2short(lastFreeOffset + stuff / 2);
         char *nextFreeOffset = tmp + *char2int(tmp) + stuff;
         char *toBindAfter = nextFreeOffset;
         int isLast = *char2short(nextFreeOffset + stuff / 2);
-        //char *lastFreeOffset = tmp - *char2int(tmp - stuff / 2) - stuff;
         char *toBindBefore = lastFreeOffset;
-        //printf("%d\n", *char2int(lastFreeOffset));
-        //printf("%d\n", *char2int(nextFreeOffset));
         lastFreeOffset -= *char2short(lastFreeOffset + stuff / 2 + freeStuff / 2);
         nextFreeOffset += *char2short(nextFreeOffset + stuff / 2);
-        //printf("%d\n", *char2int(lastFreeOffset));
-        //printf("%d\n", *char2int(nextFreeOffset));
 
-        int newSize;
+        int newSize;    //volne bloky okolo sa spoja s uvolnenym blokom
         if(!isEnd){
             newSize = *char2int(toBindBefore) + stuff + *char2int(tmp);
         } else{
@@ -273,7 +262,7 @@ int memory_free(void *valid_ptr){
         }
         *char2int(tmp + stuff / 2 + newSize) = newSize;
 
-        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);
+        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);      //aktualizuju sa offsety
         if(isEnd == 0){
             return 0;
         }
@@ -285,32 +274,32 @@ int memory_free(void *valid_ptr){
         }
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
     }
-    return 0;
+    return 0;       //vrati sa 0 (uspesne uvolneny blok)
 }
 
 int memory_check(void *ptr){
     char *tmp = (char*) ptr;
-    if(tmp == NULL){
+    if(tmp == NULL){    //ak je pointer NULL, hned sa vrati 0
         return 0;
     }
-    if(*char2int(tmp) < 0 && *(tmp + 4) == -2){
-        return 1;
+    if(*char2int(tmp) < 0 && *(tmp + 4) == -2){     //ak je pointer mensi ako -2 (hlavicka alebo peticka alokovaneho bloku) a o 4 bajty dalej je -2 (miesto v alokovanom bloku)
+        return 1;                                   //vrati 1, inak vrati 0
     }else{
         return 0;
     }
 }
 
 void memory_init(void *ptr, unsigned int size){
-    header = (int*)ptr;
-    int staff = 2 * sizeof(int);
-    for (int i = 0; i < (size + 16); i++){
+    header = (int*)ptr;     //globalny pointer header sa nastavi na dany pointer
+    int staff = 2 * sizeof(int);    //velkost rezie
+    for (int i = 0; i < (size + 16); i++){  //cely blok pamate sa vyplni 0
         *(int2char(header) + i) = 0;
     }
-    *header = (int)size;
-    *(header + 1) = 8;
-    *(header + 2) = (int)(size - (2*sizeof(int) + staff));
-    *char2int(int2char(header) + size - sizeof(int)) = (int)(size - (2*sizeof(int) + staff));
-    *char2short(int2char(header) + 14) = (unsigned short) 8;
+    *header = (int)size;    //na prve miesto sa ulozi velkost celeho bloku
+    *(header + 1) = 8;      //na 4. miesto sa ulozi 8 (offset na najblizsi volny blok)
+    *(header + 2) = (int)(size - (2*sizeof(int) + staff));  //na 8. miesto sa ulozi hlavicka - velkost volneho bloku
+    *char2int(int2char(header) + size - sizeof(int)) = (int)(size - (2*sizeof(int) + staff));   //na poslende 4 miesta sa ulozi to iste (paticka)
+    *char2short(int2char(header) + 14) = (unsigned short) 8;    //na 14. miesto sa ulozi offset na header
 
 }
 
@@ -688,3 +677,27 @@ void z1_testovac(char *region, char **pointer, int minBlock, int maxBlock, int m
 //
 //    return 0;
 //}
+
+int main(void){     //ratanie chyby od idealneho riesenia - NOT DONE YET
+    char region[50050];
+    memory_init(region, 50000);
+    char *pointers[50000];
+    int size;
+    int i = 0;
+    do {
+        i++;
+        size = rand() % 49092 + 8;
+        pointers[i] = memory_alloc(size);
+        if(i > 1 && memory_check(pointers[i-1])){
+            memory_free(pointers[i-1]);
+        }
+    } while(pointers[i] != NULL && i < 5);
+    if(memory_check(pointers[i])){
+        memory_free(pointers[i]);
+    }
+    if(*char2int(region + 8) == *char2int(region) - 16){
+        printf("Successful Test\n");
+    }
+
+    return 0;
+}
