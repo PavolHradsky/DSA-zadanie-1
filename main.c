@@ -17,119 +17,46 @@ int *char2int (char *ptr){                                  //pretypovanie char 
 char *int2char (int *ptr){                                  //pretypovanie int na char
     return ((char*)ptr);
 }
-unsigned short *char2short(char *ptr){
+unsigned short *char2short(char *ptr){                      //pretypovanie char na unsigned short
     return ((unsigned short*)ptr);
 }
 
-//void *memory_alloc(unsigned int size){
-//    //stuff definition
-//    int stuff = 2 * sizeof(int);
-//    int freeStuff = 2 * sizeof(unsigned short);
-//    int fullSize = (int)size + stuff;
-//
-//    //zapamatanie dolezitych miest v pamati
-//    char *tmp = int2char(header);
-//    char *firstOffset = tmp + 4;
-//    char *firstFree = (firstOffset) + *char2int((tmp+4));
-//    char *lastFreeOffset = firstFree;
-//    char *nextFreeOffset;
-//    tmp += *char2int(firstFree);
-//
-//    while(*char2int(tmp) < (int) size && *char2short(tmp + stuff / 2) != 0){
-//        size += 0;
-//        lastFreeOffset = tmp;
-//        tmp += *char2short(tmp + stuff / 2);
-//    }
-//    if(tmp + fullSize > int2char(header) + *header){
-//        //printf("tmp+fullSeze: %x, \nheader+*header: %x\n", (int)tmp + fullSize, (int)int2char(header) + *header);
-//        printf("Velka pamat\n");
-//        return NULL;
-//    }
-//    if(*char2int(tmp) < size + stuff + freeStuff){
-//        size = *char2int(tmp);
-//        //printf("SIZE: %d\n", size);
-//        fullSize = (int) size + stuff;
-//    }
-//    int oldSize = *char2int(tmp);
-//    int isLast = *char2short(tmp + stuff / 2);
-//    if(!isLast){
-//        nextFreeOffset = tmp + *char2short(tmp + stuff / 2);
-//    }
-//    char *toReturn = tmp;
-//
-//    //alokovanie miesta
-//    *(char2int(tmp)) = (int)size * (-1);
-//    tmp += stuff/2;
-//    for(int i = 0; i < size; i++){
-//        *tmp = -2;
-//        tmp += 1;
-//    }
-//    *(char2int(tmp)) = (int)size * (-1);
-//    tmp += stuff/2;
-//    //printf("%d\n", *char2int(tmp));
-//
-//
-//
-//    //update volnych miest
-//    if(tmp == 0 && tmp < int2char(header) + *header){
-//        *char2int(tmp) = oldSize - fullSize;
-//        *char2int(tmp + oldSize - fullSize + stuff / 2) = oldSize - fullSize;
-//    }
-//    if(!isLast){
-//        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);
-//        *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
-//        *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
-//        *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
-//
-//    } else{
-//        *char2short(tmp + stuff / 2) = (unsigned short) (tmp - lastFreeOffset);
-//        *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - lastFreeOffset);
-//        *char2short(lastFreeOffset + stuff / 2) = (unsigned short) 0;
-//    }
-//    return toReturn;
-//
-//
-//}
-
 void *memory_alloc(unsigned int size){
 
-//stuff definition
+//definovanie velkosti rezie
     int stuff = 2 * sizeof(int);
     int freeStuff = 2 * sizeof(unsigned short);
     int fullSize = (int)size + stuff;
 
 //zapamatanie dolezitych miest v pamati
     char *tmp = int2char(header);
-    char *firstOffset = tmp + 4;
-    char *firstFree = (firstOffset) + *char2int((tmp+4));
-//dalsie dolezite hodnoty
+    char *firstOffset = tmp + 4;    //prve volne miesto (pointer)
     tmp += *char2int(tmp + stuff / 2);
-    int freeSizeBefore = *(char2int(tmp));
-    unsigned short nextFreeOffset = *(char2short(tmp + stuff/2));
+    int freeSizeBefore = *(char2int(tmp));  //volne miesto kam alokujem
+    unsigned short nextFreeOffset = *(char2short(tmp + stuff/2));   //dalsi volny blok
     char *nextFreeOffset_place = tmp + stuff/2;
-    unsigned short lastFreeOffset = *(char2int(tmp + stuff/2 + freeStuff/2));
+    unsigned short lastFreeOffset = *(char2int(tmp + stuff/2 + freeStuff/2)); //predchadzajuci volny blok
     char *lastFreeOffset_place = tmp + stuff/2 + freeStuff/2;
     char *lastFreeBlock = int2char(header);
 //ak chcem alokovat viac ako mam miesta - 1. podmienka
-    int betweenIsFree = 0;
+    int betweenIsFree = 0;  //pamata si, ci som preskocil nejaky mensi volny blok
 
-    while(*char2int(tmp) < (int) size && *char2short(tmp + stuff / 2) != 0){
+    while(*char2int(tmp) < (int) size && *char2short(tmp + stuff / 2) != 0){    //prechadza volne bloky a hlada prvy, kam sa vmesti novy blok
         betweenIsFree = 1;
         size += 0;
         lastFreeBlock = tmp;
         tmp += *char2short(tmp + stuff / 2);
     }
-    if(tmp + fullSize > int2char(header) + *header){
-        //printf("tmp+fullSeze: %x, \nheader+*header: %x\n", (int)tmp + fullSize, (int)int2char(header) + *header);
-        //printf("Velka pamat\n");
+    if(tmp + fullSize > int2char(header) + *header){    //ak som uz za pamatou do ktorej mam pristup, vrati NULL
         return NULL;
     }
 
-    if(*char2int(tmp) < size + stuff + freeStuff){
+    if(*char2int(tmp) < size + stuff + freeStuff){      //ak by volne miesto ktore sa vytvori po rozpoleni volneho bloku nestacilo na reziu volneho miesta, priradi sa k uz alokovanemu
         size = *char2int(tmp);
         //printf("SIZE: %d\n", size);
         fullSize = (int) size + stuff;
     }
+    //aktualizovanie predoslich a dalsich volnych blokov podla sucastneho miesta tmp
     char *nextFreeBlock = tmp + *char2short(tmp + stuff / 2);
     freeSizeBefore = *(char2int(tmp));
     nextFreeOffset = *(char2short(tmp + stuff/2));
@@ -137,9 +64,9 @@ void *memory_alloc(unsigned int size){
     lastFreeOffset = *(char2int(tmp + stuff/2 + freeStuff/2));
     lastFreeOffset_place = tmp + stuff/2 + freeStuff/2;
 
-    char *toReturn = tmp;
+    char *toReturn = tmp;   //pointer na vratenie
     unsigned short isLast = 1;
-    if(*char2int(tmp) == size && *char2short(tmp + stuff / 2) == 0){
+    if(*char2int(tmp) == size && *char2short(tmp + stuff / 2) == 0){ //pamata si ci je blok posledny
         isLast = 0;
     }
 //alokovanie miesta
@@ -154,20 +81,20 @@ void *memory_alloc(unsigned int size){
     //printf("%d\n", *char2int(tmp));
 //nastavienie volnych offsetov (aj aktualizovanie minuleho a buduceho)
 
-    if(*char2int(tmp) >= 0){
-        if(!isLast){
+    if(*char2int(tmp) >= 0){    //ak sucastne miesto tmp nie je alokovane
+        if(!isLast){ //ak je to posledne volne miesto, ak od zaciatku enbol ziaden volny blok, lastFreeOffset sa nastavi na 0, inak na velkost celej pamate
             if(betweenIsFree){
                 *char2short(lastFreeOffset_place) = 0;
 
             } else{
                 *char2int(firstOffset) = *header;
             }
-        } else{
-            *(char2int(tmp)) = freeSizeBefore - fullSize;
+        } else{ //ak nebol posledny
+            *(char2int(tmp)) = freeSizeBefore - fullSize;   //zapise sa novy volny blok
             *(char2int(tmp + freeSizeBefore - (fullSize - stuff/2))) = freeSizeBefore - fullSize;
-            if(nextFreeOffset == 0){
+            if(nextFreeOffset == 0){    //ak je posledny, toto som uz osetril hore
                 *char2short(tmp + stuff/2) = 0;
-            }else{
+            }else{  //aktualizuju sa ukazovatel na dalsi volny blok a ukazovatel na predosly volny blok (aj v dalsom a predoslom volnom bloku)
                 *char2short(tmp + stuff/2) = nextFreeOffset - fullSize;
                 *char2short(nextFreeOffset_place + nextFreeOffset + freeStuff/2) = (unsigned short)((nextFreeOffset_place + nextFreeOffset - stuff/2) - tmp);
             }
@@ -179,29 +106,29 @@ void *memory_alloc(unsigned int size){
                 *char2short(nextFreeOffset_place - lastFreeOffset) = (unsigned short)(tmp - (nextFreeOffset_place - lastFreeOffset - stuff/2));
             }
         }
-    }else {
+    }else { //ak sucastne tmp uz je alokovane (vyuzilo sa cele volne miesto), nastavia sa ukazovatele spravnym sposobom
         *char2short(lastFreeBlock + stuff / 2) = (unsigned short) (nextFreeBlock - lastFreeBlock);
         *char2short(nextFreeBlock + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeBlock - lastFreeBlock);
     }
 
 
-    return toReturn;
+    return toReturn; //vrati sa ukazovatel na alokovany blok
 
 }
 
 int memory_free(void *valid_ptr){
 
-//stuff definition
+//definicia rezie
     int stuff = 2 * sizeof(int);
     int freeStuff = 2 * sizeof(unsigned short);
 
 
 //zapamatanie dolezitych miest v pamati
     char *tmp = (char*)valid_ptr;
-    int size = *char2int(tmp) * (-1);
-    int fullSize = *char2int(tmp) * (-1) + stuff;
+    int size = *char2int(tmp) * (-1);   //velkost
+    int fullSize = *char2int(tmp) * (-1) + stuff;   //velkost + stuff
 
-//Uvolni pamat
+//Uvolni pamat, zaporne hodnotu sa zmenia na kladne a vyplni sa nulami
     *char2int(tmp) *= (-1);
     tmp += 4;
     for(int i = 0; i < size; i++){
@@ -211,32 +138,28 @@ int memory_free(void *valid_ptr){
     *char2int(tmp) *= (-1);
     tmp -= (fullSize - stuff/2);
 //Pospaja volne bloky a aktualizuje ukazovatele
-    if(*char2int(int2char(header) + 4) == *header){     //je plne
-        *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - int2char(header));
-        *char2short(int2char(header) + 4) = (unsigned short) (tmp - int2char(header));
+    if(*char2int(int2char(header) + 4) == *header){     //cela pamat je plna
+        *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - int2char(header)); //offset na predosle volne miesto sa nastavi na header
+        *char2short(int2char(header) + 4) = (unsigned short) (tmp - int2char(header)); //ukazovatel na prve volne miesto sa nastavi na tmp
     }
     else if(tmp == int2char(header) + stuff && *char2int(tmp + fullSize) < 0) {    //prvy pointer - za nie je volne
-        //printf("Case 0\n");
-
-        char *lastFreeOffset = (int2char(header) + stuff / 2);
+        char *lastFreeOffset = (int2char(header) + stuff / 2);  //lastFreeOffset sa nastavi na zaciatok a nextFreeOffset na najblizsi volny blok od zaciatku
         char *nextFreeOffset = (int2char(header) + *char2short(lastFreeOffset));
-        *char2short(tmp + stuff / 2) = (unsigned short) (*char2short(lastFreeOffset) - 8);
+        *char2short(tmp + stuff / 2) = (unsigned short) (*char2short(lastFreeOffset) - 8);  //aktualizuje sa ukazovatel na predosli a dalsi volny blok
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - int2char(header));
-        *char2short(lastFreeOffset) = (unsigned short) (tmp - int2char(header));
+        *char2short(lastFreeOffset) = (unsigned short) (tmp - int2char(header));    //aktualizuje sa ukazovatel predosleho a dalsieho volneho bloku na tmp
         *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
 
     } else if(tmp == int2char(header) + stuff && *char2int(tmp + fullSize) > 0){    //prvy pointer - za je volne
-        //printf("Case 0_v1\n");
-
-        char *lastFreeOffset = (int2char(header) + stuff / 2);
+        char *lastFreeOffset = (int2char(header) + stuff / 2);  //lastFreeOffset sa nastavi na zaciatok a nextFreeOffset na najblizsi volny blok od zaciatku
         char *nextFreeOffset = (int2char(header) + *lastFreeOffset);
-        int isLast = *char2short(nextFreeOffset + stuff / 2);
-        nextFreeOffset += *char2short(nextFreeOffset + stuff / 2);
-        *char2short(tmp + stuff / 2) = (unsigned short) (*lastFreeOffset - 8);
+        int isLast = *char2short(nextFreeOffset + stuff / 2);   //pamata si ci je volny blok posledny
+        nextFreeOffset += *char2short(nextFreeOffset + stuff / 2);  //posunie sa na dalsi volny blok
+        *char2short(tmp + stuff / 2) = (unsigned short) (*lastFreeOffset - 8);  //aktualizuje sa ukazovatel na predosli a dalsi volny blok
         *char2short(tmp + stuff / 2 + freeStuff / 2) = (unsigned short) (tmp - int2char(header));
         *char2short(lastFreeOffset) = (unsigned short) (tmp - int2char(header));
 
-        *char2int(tmp) += *char2int(tmp + fullSize) + stuff;
+        *char2int(tmp) += *char2int(tmp + fullSize) + stuff;    //uvolneny blok sa spoji s dalsim volnym blokom
         int newSize = *char2int(tmp);
         tmp += stuff;
         for(int i = 0; i < (newSize - stuff / 2); i++){
@@ -245,8 +168,8 @@ int memory_free(void *valid_ptr){
         }
         *char2int(tmp) = newSize;
         tmp -= (newSize + stuff / 2);
-        //printf("%d\n", *char2int(tmp));
-        if(isLast != 0){
+
+        if(isLast != 0){    //nastavia sa ukazovatele (offsety) na dalsi volny blok
             *char2short(tmp + stuff / 2) = (unsigned short) (nextFreeOffset - tmp);
             *char2short(nextFreeOffset + stuff / 2 + freeStuff / 2) = (unsigned short) (nextFreeOffset - tmp);
         } else{
