@@ -279,7 +279,7 @@ int memory_free(void *valid_ptr){
 
 int memory_check(void *ptr){
     char *tmp = (char*) ptr;
-    if(tmp == NULL){    //ak je pointer NULL, hned sa vrati 0
+    if(tmp == NULL){                                //ak je pointer NULL, hned sa vrati 0
         return 0;
     }
     if(*char2int(tmp) < 0 && *(tmp + 4) == -2){     //ak je pointer mensi ako -2 (hlavicka alebo peticka alokovaneho bloku) a o 4 bajty dalej je -2 (miesto v alokovanom bloku)
@@ -468,7 +468,7 @@ void memory_init(void *ptr, unsigned int size){
 //    return 0;
 //}
 
-//int main(void){     //nahodne bloky do pola 100
+//int main(void){     //nahodne bloky do pola 200
 //    char region[250];
 //    memory_init(region, 200);
 //    char *pointers[200];
@@ -607,37 +607,37 @@ void memory_init(void *ptr, unsigned int size){
 //    return 0;
 //}
 
-//int main(void){     //ratanie chyby od idealneho riesenia
-//    char region[5050];
-//    memory_init(region, 5000);
-//    char *pointers[5000];
-//    int allocated = 0;
-//    int allocated_count = 0;
-//    int memSize = 5000;
-//    int size;
-//    int i = 0;
-//    int freeSize;
-//    do {
-//        i++;
-//        size = rand() % 200 + 8;
-//        freeSize = *char2int(int2char(header) + *char2int(int2char(header) + 4));
-//        if(freeSize < size){
-//            size = 8;
-//        }
-//        allocated += size;
-//        allocated_count++;
-//        pointers[i] = memory_alloc(size);
-//    } while(pointers[i] != NULL);
-//    i = 1;
-//    while(pointers[i] != NULL) {
-//        memory_free(pointers[i]);
-//        i++;
-//    }
-//    printf("velkost uspesne alokovanej pamate je %d v %d blokoch na pamat velkosti %d\n", allocated, allocated_count, memSize);
-//    printf("To je %.2lf%%\n", (double) allocated / (double) memSize * 100);
-//    if(*char2int(region + 8) == *char2int(region) - 16){
-//        printf("Successful Test\n");
-//    }
-//
-//    return 0;
-//}
+int main(void){     //ratanie chyby od idealneho riesenia
+    char region[5050];
+    memory_init(region, 5000);
+    char *pointers[5000];
+    int allocated = 0;
+    int allocated_count = 0;
+    int memSize = 5000;
+    int size;
+    int i = 0;
+    int freeSize;
+    do {
+        i++;
+        size = rand() % 200 + 8;
+        freeSize = *char2int(int2char(header) + *char2int(int2char(header) + 4));
+        if(freeSize < size){
+            size = 8;
+        }
+        allocated += size;
+        allocated_count++;
+        pointers[i] = memory_alloc(size);
+    } while(pointers[i] != NULL);
+    i = 1;
+    while(pointers[i] != NULL) {
+        memory_free(pointers[i]);
+        i++;
+    }
+    printf("velkost uspesne alokovanej pamate je %d v %d blokoch na pamat velkosti %d\n", allocated, allocated_count, memSize);
+    printf("To je %.2lf%%\n", (double) allocated / (double) memSize * 100);
+    if(*char2int(region + 8) == *char2int(region) - 16){
+        printf("Successful Test\n");
+    }
+
+    return 0;
+}
